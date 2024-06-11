@@ -51,7 +51,7 @@ fn main() {
             let mut index : i8 = target as i8;
             match self.game_state {
                 State::LeftToMove => index+=1,
-                State::RightToMove => index-=1,
+                State::RightToMove => index+=1,
                 _ => return
             }
             let (pit, opp_pit) = match self.game_state {
@@ -71,13 +71,13 @@ fn main() {
                 } else {
                     match self.game_state {
                         State::LeftToMove => index+=1,
-                        State::RightToMove => index-=1,
+                        State::RightToMove => index+=1,
                         _ => return
                     }
                 }
             };
             match self.game_state {
-                State::LeftToMove => index-=1,
+                State::LeftToMove => index+=1,
                 State::RightToMove => index+=1,
                 _ => return
             }
@@ -111,9 +111,9 @@ fn main() {
     let mut test_game: Game = Default::default();
     test_game.display();
     // test_game.board[4] = 0;
-    test_game.make_move(1);
+    test_game.make_move(2);
     test_game.display();
-    test_game.make_move(9);
+    // test_game.make_move(9);
     test_game.display();
 
 }

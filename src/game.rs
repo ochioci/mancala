@@ -1,11 +1,12 @@
 use std::num::ParseIntError;
 use crate::CLEAR;
+#[derive(Clone, Debug)]
 pub(crate) struct Game {
     game_state: State,
     board: [u8; 14],
 }
-#[derive(Default, Debug)]
-enum State {
+#[derive(Default, Debug, Clone)]
+pub(crate) enum State {
     #[default]
     LeftToMove,
     RightToMove,
@@ -14,6 +15,43 @@ enum State {
     Draw
 }
 impl Game {
+
+    pub fn get_state(&self) -> &State {
+        &self.game_state
+    }
+
+    pub fn eval(&self) -> i16 {
+        match self.game_state {
+            State::LeftToMove => {
+                 (self.board[6] as i16) -( self.board[13] as i16)
+            },
+            State::RightToMove => {
+                 (self.board[13] as i16) - ( self.board[6] as i16)
+            }
+            _ => {
+                 0
+            }
+        }
+    }
+    pub fn get_moves(&self) -> Vec<usize> {
+        match self.game_state {
+            State::LeftToMove => {
+                let mut a = vec![];
+                for i in 0..6 {
+                    if self.board[i] > 0 {a.push(i);};
+                };
+                a
+            },
+            State::RightToMove => {
+                let mut a = vec![];
+                for i in 7..13 {
+                    if self.board[i] > 0 {a.push(i);};
+                };
+                a
+            }
+            _ => vec![]
+        }
+    }
     pub fn play_mancala(&mut self) {
         self.handle_turn();
         println!("{}", match self.game_state {
@@ -107,7 +145,7 @@ impl Game {
 
     }
 
-    fn display(&self) {
+    pub(crate) fn display(&self) {
         let mut top = String::from("  ");
         let mut bottom = String::from("  ");
         for i in 0..6 {
@@ -121,7 +159,7 @@ impl Game {
         println!("{}", bottom);
     }
 
-    fn swap_turn(&mut self) {
+    pub(crate) fn swap_turn(&mut self) {
         match self.game_state {
             State::LeftToMove => self.game_state = State::RightToMove,
             State::RightToMove => self.game_state = State::LeftToMove,
@@ -129,7 +167,7 @@ impl Game {
         }
     }
 
-    fn make_move(&mut self, target : u8) {
+    pub(crate) fn make_move(&mut self, target : u8) {
         let mut marbles = self.board[target as usize];
         self.board[target as usize] = 0;
         let mut index : i8 = target as i8;
@@ -190,6 +228,13 @@ impl Game {
     pub(crate) fn small() -> Self {
         Self {
             board: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0],
+            game_state: State::default()
+        }
+    }
+
+    pub(crate) fn sparse() -> Self {
+        Self {
+            board: [1,0,1,0,1,0,0,1,0,1,0,1,0,0],
             game_state: State::default()
         }
     }

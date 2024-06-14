@@ -1,6 +1,6 @@
 use std::num::ParseIntError;
 use crate::ai::display_moves;
-use crate::CLEAR;
+use crate::{CLEAR, LEFT_AI, RIGHT_AI};
 #[derive(Clone, Debug)]
 pub(crate) struct Game {
     game_state: State,
@@ -23,23 +23,24 @@ impl Game {
     }
 
     pub fn eval(&self) -> i16 {
-        match self.game_state {
-            State::RightToMove => {
-                 (self.board[13] as i16) -( self.board[6] as i16)
-            },
-            State::LeftToMove => {
-                 (self.board[6] as i16) - ( self.board[13] as i16)
-            }
-            State::LeftWins => {
-                100
-            },
-            State::RightWins => {
-                100
-            }
-            State::Draw => {
-                 0
-            }
-        }
+        // match self.game_state {
+        //     State::RightToMove => {
+        //          (self.board[13] as i16) -( self.board[6] as i16)
+        //     },
+        //     State::LeftToMove => {
+        //          (self.board[6] as i16) - ( self.board[13] as i16)
+        //     }
+        //     State::LeftWins => {
+        //         100
+        //     },
+        //     State::RightWins => {
+        //         100
+        //     }
+        //     State::Draw => {
+        //          0
+        //     }
+        // }
+        (self.board[6] as i16) - ( self.board[13] as i16)
     }
     pub fn get_moves(&self) -> Vec<usize> {
         match self.game_state {
@@ -89,8 +90,8 @@ impl Game {
         self.game_over_check();
         match self.game_state {
             State::LeftToMove => {
-                // display_moves(self.clone());
-                println!("Top to move");
+                if LEFT_AI { (display_moves(self.clone()))};
+                println!("Top (LEFT) to move");
                 println!("You go in this direction --->>>");
                 println!("  1  2  3  4  5  6  ");
                 println!("  |  |  |  |  |  |  ");
@@ -98,8 +99,8 @@ impl Game {
                 "top"
             },
             State::RightToMove => {
-                display_moves(self.clone());
-                println!("Bottom to move");
+                if RIGHT_AI { (display_moves(self.clone()))};
+                println!("Bottom (RIGHT) to move");
                 println!("<<<--- You go in this direction");
                 self.display();
                 println!("  |  |  |  |  |  |  ");

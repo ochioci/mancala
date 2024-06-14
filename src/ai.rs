@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use crate::CLEAR;
+use crate::{AI_DEPTH, CLEAR};
 use crate::game::{Game, State};
 
 impl PartialEq<State> for &State {
@@ -56,7 +56,24 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
         let evals : Vec<i16> = moves.iter().map(|m| {
             let d = m.eval();
             let o = best_move_search(m.clone(), depth-1).1;
-            let bestEval : Option<&i16> = o.iter().max();
+            let bestEval: Option<&i16> = match m.get_state() {
+                State::LeftToMove => {
+                    o.iter().max()
+                },
+                State::RightToMove => {
+                    o.iter().min()
+                }
+                State::LeftWins => {
+                    Some(&100)
+                }
+                State::RightWins => {
+                    Some(&-100)
+                }
+                State::Draw => {
+                    Some(&0)
+                }
+            };
+            // let bestEval : Option<&i16> = o.iter().max();
             match bestEval {
                 Some(bestEval) => bestEval,
                 _ => &d
@@ -76,8 +93,8 @@ pub fn best_move_test(game : Game, depth : u8) {
 }
 
 pub fn display_moves(game: Game) {
-    let (games, evals) = best_move_search(game.clone(), 7);
-    let mut moves = [-1; 6];
+    let (games, evals) = best_move_search(game.clone(), AI_DEPTH);
+    let mut moves = [-999; 6];
 
     for g in 0..games.len() {
         let index = match game.get_state(){

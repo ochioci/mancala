@@ -1,9 +1,11 @@
 use std::num::ParseIntError;
+use crate::ai::display_moves;
 use crate::CLEAR;
 #[derive(Clone, Debug)]
 pub(crate) struct Game {
     game_state: State,
     board: [u8; 14],
+    pub(crate) move_index: usize
 }
 #[derive(Default, Debug, Clone)]
 pub(crate) enum State {
@@ -22,13 +24,19 @@ impl Game {
 
     pub fn eval(&self) -> i16 {
         match self.game_state {
-            State::LeftToMove => {
-                 (self.board[6] as i16) -( self.board[13] as i16)
-            },
             State::RightToMove => {
-                 (self.board[13] as i16) - ( self.board[6] as i16)
+                 (self.board[13] as i16) -( self.board[6] as i16)
+            },
+            State::LeftToMove => {
+                 (self.board[6] as i16) - ( self.board[13] as i16)
             }
-            _ => {
+            State::LeftWins => {
+                100
+            },
+            State::RightWins => {
+                100
+            }
+            State::Draw => {
                  0
             }
         }
@@ -81,6 +89,7 @@ impl Game {
         self.game_over_check();
         match self.game_state {
             State::LeftToMove => {
+                // display_moves(self.clone());
                 println!("Top to move");
                 println!("You go in this direction --->>>");
                 println!("  1  2  3  4  5  6  ");
@@ -89,6 +98,7 @@ impl Game {
                 "top"
             },
             State::RightToMove => {
+                display_moves(self.clone());
                 println!("Bottom to move");
                 println!("<<<--- You go in this direction");
                 self.display();
@@ -228,14 +238,16 @@ impl Game {
     pub(crate) fn small() -> Self {
         Self {
             board: [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0],
-            game_state: State::default()
+            game_state: State::default(),
+            move_index: 100
         }
     }
 
     pub(crate) fn sparse() -> Self {
         Self {
             board: [1,0,1,0,1,0,0,1,0,1,0,1,0,0],
-            game_state: State::default()
+            game_state: State::default(),
+            move_index: 100
         }
     }
 }
@@ -244,7 +256,8 @@ impl Default for Game {
     fn default() -> Self {
         Self {
             board: [4,4,4,4,4,4,0,4,4,4,4,4,4,0],
-            game_state: State::default()
+            game_state: State::default(),
+            move_index: 100
         }
     }
 }

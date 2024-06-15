@@ -1,6 +1,8 @@
 use std::cmp::PartialEq;
 use crate::{AI_DEPTH, CLEAR};
 use crate::game::{Game, State};
+use std::thread;
+use std::thread::JoinHandle;
 
 impl PartialEq<State> for &State {
     fn eq(&self, other: &State) -> bool {
@@ -56,20 +58,70 @@ pub fn next_positions(game : Game) -> Vec<Game> {
     options
 }
 
+fn best_index(evals : Vec<i16>, state: &State) -> usize {
+    let mut best = 0;
+    for i in 0..evals.len() {
+        if (match state {
+            State::LeftToMove => { evals[i] < evals[best] },
+            State::RightToMove => {evals[i] > evals[best] }
+            _ => {false}}) {
+            best = i;
+        }
+    }
+    best
+}
 pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
+    let next = next_positions(game);
+    let mut threads: Vec<JoinHandle<(Vec<Game>, Vec<i16>)>> = vec![];
+    for n in next {
+        println!("Thread Created");
+        let d = depth.clone();
+        threads.push(thread::spawn(move || {
+           best_move_search_helper(n, d)
+        }));
+    }
+
+    let mut out = vec![];
+    for a in threads {
+        match a.join() {
+            Ok(a) => {
+                println!("Thread Finished!");
+                out.push(a)
+            },
+            Err(a) => {
+                println!("{:?}", a);
+            }
+        }
+    }
+    let mut result_games = vec![];
+    let mut result_evals = vec![];
+    for (games, evals) in out {
+        let local_best = best_index(evals.clone(), games[0].get_state());
+        result_games.push(games[local_best].clone());
+        result_evals.push(evals[local_best].clone());
+    }
+
+    for i in 0..result_games.len() {
+        println!("Move: {}, Eval: {}", result_games[i].move_index, result_evals[i]);
+    }
+
+    (result_games, result_evals)
+}
+
+pub fn best_move_search_helper(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
     if (depth < 1) {
         let mut moves = next_positions(game);
-        let evals : Vec<i16> = moves.iter().map(|m| m.eval()).collect();
+        let evals: Vec<i16> = moves.iter().map(|m| m.eval()).collect();
         (moves, evals)
     } else {
         let mut moves = next_positions(game);
-        let evals : Vec<i16> = moves.iter().map(|m| {
+        let evals: Vec<i16> = moves.iter().map(|m| {
             let d = m.eval();
-            let o = best_move_search(m.clone(), depth-1).1;
+            let o = best_move_search_helper(m.clone(), depth - 1).1;
             let bestEval: Option<&i16> = match m.get_state() {
                 State::LeftToMove => {
                     o.iter().max()
-                },
+                }
                 State::RightToMove => {
                     o.iter().min()
                 }
@@ -83,7 +135,6 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
                     Some(&0)
                 }
             };
-            // let bestEval : Option<&i16> = o.iter().max();
             match bestEval {
                 Some(bestEval) => bestEval,
                 _ => &d
@@ -94,16 +145,8 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
 
 }
 
-pub fn best_move_test(game : Game, depth : u8) {
-    let moves = next_positions(game);
-    for m in moves {
-        println!("Move: {}", m.move_index);
-        m.display();
-    }
-}
-
 pub fn best_move(game: Game) -> (u8, i16) {
-    let (games, evals) = best_move_search(game.clone(), predict_complexity(game.clone()) as u8);
+    let (games, evals) = best_move_search(game.clone(), AI_DEPTH);
     let mut moves= match game.get_state() {
         State::LeftToMove => {
             [-999; 6]

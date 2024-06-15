@@ -1,6 +1,7 @@
 use std::num::ParseIntError;
 use crate::ai::{display_moves, predict_complexity};
-use crate::{CLEAR, LEFT_AI, RIGHT_AI};
+use crate::{AI_DEPTH, CLEAR, LEFT_AI, RIGHT_AI};
+use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Clone, Debug)]
 pub(crate) struct Game {
     game_state: State,
@@ -71,10 +72,21 @@ impl Game {
 
     fn handle_turn(&mut self) {
         self.game_over_check();
-        println!("Depth: {}", predict_complexity(self.clone()));
+        println!("AI Thinking... \nDepth: {}", AI_DEPTH);
         match self.game_state {
             State::LeftToMove => {
-                if LEFT_AI { (display_moves(self.clone()))};
+                if LEFT_AI {
+                    let t = SystemTime::now();
+                    (display_moves(self.clone()));
+                    match t.elapsed() {
+                        Ok(elapsed) => {
+                            println!("Finished in: {:?} seconds.", elapsed);
+                        },
+                        _ => {
+                            println!("time error????");
+                        }
+                    }
+                };
                 println!("Top (LEFT) to move");
                 println!("You go in this direction --->>>");
                 println!("  1  2  3  4  5  6  ");
@@ -83,7 +95,18 @@ impl Game {
                 "top"
             },
             State::RightToMove => {
-                if RIGHT_AI { (display_moves(self.clone()))};
+                if RIGHT_AI {
+                    let t = SystemTime::now();
+                    (display_moves(self.clone()));
+                    match t.elapsed() {
+                        Ok(elapsed) => {
+                            println!("Finished in: {:?} seconds.", elapsed);
+                        },
+                        _ => {
+                            println!("time error????");
+                        }
+                    }
+                };
                 println!("Bottom (RIGHT) to move");
                 println!("<<<--- You go in this direction");
                 self.display();

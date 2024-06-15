@@ -94,21 +94,41 @@ pub fn best_move_test(game : Game, depth : u8) {
 
 pub fn display_moves(game: Game) {
     let (games, evals) = best_move_search(game.clone(), AI_DEPTH);
-    let mut moves = [-999; 6];
+    let mut moves= match game.get_state() {
+        State::LeftToMove => {
+            [-999; 6]
+        },
+        _ => {
+            [999; 6]
+        }
+    };
 
     for g in 0..games.len() {
         let index = match game.get_state(){
             State::LeftToMove => {
+                // moves = [-999; 6];
                 games[g].move_index
             },
             State::RightToMove => {
+                // moves = [999; 6];
                 12-games[g].move_index
             }
-            _ => return
+            _ => {return; }
         };
-        if evals[g] > moves[index] {
-            moves[index] = evals[g];
+        match game.get_state() {
+            State::LeftToMove => {
+                if evals[g] > moves[index] {
+                    moves[index] = evals[g];
+                }
+            },
+            State::RightToMove => {
+                if evals[g] < moves[index] {
+                    moves[index] = evals[g];
+                }
+            }
+            _ => {}
         }
+
     }
 
     for m in 0..moves.len() {

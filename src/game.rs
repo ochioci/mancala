@@ -23,23 +23,6 @@ impl Game {
     }
 
     pub fn eval(&self) -> i16 {
-        // match self.game_state {
-        //     State::RightToMove => {
-        //          (self.board[13] as i16) -( self.board[6] as i16)
-        //     },
-        //     State::LeftToMove => {
-        //          (self.board[6] as i16) - ( self.board[13] as i16)
-        //     }
-        //     State::LeftWins => {
-        //         100
-        //     },
-        //     State::RightWins => {
-        //         100
-        //     }
-        //     State::Draw => {
-        //          0
-        //     }
-        // }
         (self.board[6] as i16) - ( self.board[13] as i16)
     }
     pub fn get_moves(&self) -> Vec<usize> {

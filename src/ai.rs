@@ -22,6 +22,16 @@ impl PartialEq<State> for &State {
     }
 }
 
+pub fn predict_complexity(game : Game) -> i32 {
+    let mut count : i32 = 0;
+    let options = next_positions(game);
+    for o in options {
+        count += next_positions(o).len() as i32;
+    }
+    // (18/(count as f32).sqrt() as i32) + AI_DEPTH as i32
+    AI_DEPTH.into()
+}
+
 pub fn next_positions(game : Game) -> Vec<Game> {
     //Returns the game state after every possible turn is taken
     //accounts for extra turns
@@ -92,8 +102,8 @@ pub fn best_move_test(game : Game, depth : u8) {
     }
 }
 
-pub fn display_moves(game: Game) {
-    let (games, evals) = best_move_search(game.clone(), AI_DEPTH);
+pub fn best_move(game: Game) -> (u8, i16) {
+    let (games, evals) = best_move_search(game.clone(), predict_complexity(game.clone()) as u8);
     let mut moves= match game.get_state() {
         State::LeftToMove => {
             [-999; 6]
@@ -113,7 +123,7 @@ pub fn display_moves(game: Game) {
                 // moves = [999; 6];
                 12-games[g].move_index
             }
-            _ => {return; }
+            _ => {return (100,999); }
         };
         match game.get_state() {
             State::LeftToMove => {
@@ -131,9 +141,30 @@ pub fn display_moves(game: Game) {
 
     }
 
-    for m in 0..moves.len() {
-        println!("Move: {}, Eval: {}", m+1, moves[m]);
-    }
+
+    let mut max = 0;
+    for i in 1..moves.len() {
+        match game.get_state() {
+            State::LeftToMove => {
+                if moves[i] > moves[max] {
+                    max = i
+                }
+            },
+            State::RightToMove => {
+                if moves[i] < moves[max] {
+                    max = i
+                }
+            }
+            _ => {}
+        };
+    };
+
+    return ((max + 1) as u8, moves[max]);
+
+
+    // for m in 0..moves.len() {
+    //     println!("Move: {}, Eval: {}", m+1, moves[m]);
+    // }
 
     // for g in 0..games.len() {
     //     // games[g].display();
@@ -147,4 +178,9 @@ pub fn display_moves(game: Game) {
     //         _ => return
     //     }, evals[g]);
     // }
+}
+
+pub fn display_moves(game: Game) {
+    let o = best_move(game);
+    println!("Best move: {}, Evaluation: {}", o.0, o.1)
 }

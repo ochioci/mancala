@@ -1,5 +1,5 @@
 use std::num::ParseIntError;
-use crate::ai::display_moves;
+use crate::ai::{display_moves, predict_complexity};
 use crate::{CLEAR, LEFT_AI, RIGHT_AI};
 #[derive(Clone, Debug)]
 pub(crate) struct Game {
@@ -71,6 +71,7 @@ impl Game {
 
     fn handle_turn(&mut self) {
         self.game_over_check();
+        println!("Depth: {}", predict_complexity(self.clone()));
         match self.game_state {
             State::LeftToMove => {
                 if LEFT_AI { (display_moves(self.clone()))};

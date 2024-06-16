@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use crate::{AI_DEPTH, CLEAR};
+use crate::{AI_DEBUG, AI_DEPTH, CLEAR, THREAD_DEBUG};
 use crate::game::{Game, State};
 use std::thread;
 use std::thread::JoinHandle;
@@ -70,14 +70,14 @@ fn best_index(evals : Vec<i16>, state: &State) -> usize {
     }
     best
 }
-pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
+pub fn best_move_search(game: Game, depth: u8, eval_func : fn(&Game) -> i16) -> (Vec<Game>, Vec<i16>) {
     let next = next_positions(game);
     let mut threads: Vec<JoinHandle<(Vec<Game>, Vec<i16>)>> = vec![];
     for n in next {
-        println!("Thread Created");
+        if THREAD_DEBUG { (println!("Thread Created!")) };
         let d = depth.clone();
         threads.push(thread::spawn(move || {
-           best_move_search_helper(n, d, eval)
+           best_move_search_helper(n, d, eval_func, -1000, 1000)
         }));
     }
 
@@ -85,7 +85,7 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
     for a in threads {
         match a.join() {
             Ok(a) => {
-                println!("Thread Finished!");
+                if THREAD_DEBUG { (println!("Thread Finished!")) };
                 out.push(a)
             },
             Err(a) => {
@@ -96,13 +96,23 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
     let mut result_games = vec![];
     let mut result_evals = vec![];
     for (games, evals) in out {
-        let local_best = best_index(evals.clone(), games[0].get_state()); //crash here
-        result_games.push(games[local_best].clone());
-        result_evals.push(evals[local_best].clone());
+        let t = games.get(0);
+        match t {
+            Some(t) => {
+                let local_best = best_index(evals.clone(), games[0].get_state()); //crash here
+                result_games.push(games[local_best].clone());
+                result_evals.push(evals[local_best].clone());
+            },
+            _ => {
+                std::process::exit(0);
+                // return (vec![], vec![]);
+            }
+        }
+
     }
 
     for i in 0..result_games.len() {
-        println!("Move: {}, Eval: {}", result_games[i].move_index, result_evals[i]);
+        if AI_DEBUG { println!("Move: {}, Eval: {}", result_games[i].move_index, result_evals[i]) };
     }
 
     (result_games, result_evals)
@@ -110,16 +120,39 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
 pub fn eval(game : &Game) -> i16 {
     (game.board[6] as i16) - ( game.board[13] as i16)
 }
-pub fn best_move_search_helper(game: Game, depth: u8, eval_func: fn(&Game) -> i16) -> (Vec<Game>, Vec<i16>) {
+
+pub fn eval_2(game: &Game) -> i16 {
+    let mut o = (game.board[6] as i16) - (game.board[13] as i16);
+    let (left, right) : ([u8; 6], [u8; 6]) = (game.board[0..6].try_into().unwrap(), game.board[7..13].try_into().unwrap());
+    let mut adjust: i16 = 0;
+    for i in 0..left.len() {
+        let reqForFreeTurn : i16 = (6 - i as i16);
+        adjust = adjust - i16::abs(left[i] as i16 - reqForFreeTurn);
+    }
+    for i in 0..right.len() {
+        let reqForFreeTurn : i16 = (i as i16 + 1);
+        adjust = adjust + i16::abs((right[i] as i16 - reqForFreeTurn));
+    }
+    o += (adjust / 10);
+    o
+}
+pub fn best_move_search_helper(game: Game, depth: u8, eval_func: fn(&Game) -> i16, alpha: i16, beta: i16) -> (Vec<Game>, Vec<i16>) {
     if (depth < 1) {
         let mut moves = next_positions(game);
         let evals: Vec<i16> = moves.iter().map(|m| eval_func(m)).collect();
         (moves, evals)
     } else {
         let mut moves = next_positions(game);
-        let evals: Vec<i16> = moves.iter().map(|m| {
-            let d = eval_func(m);
-            let o = best_move_search_helper(m.clone(), depth - 1, eval_func).1;
+
+        //TODO::
+        //alpha beta pruning
+        //left to move: we maximize
+        //right to move: we minimize
+
+        let mut evals2: Vec<i16> = vec![];
+        for m in moves.clone() {
+            let d = eval_func(&m);
+            let o = best_move_search_helper(m.clone(), depth-1, eval_func, alpha, beta).1;
             let bestEval: Option<&i16> = match m.get_state() {
                 State::LeftToMove => {
                     o.iter().max()
@@ -137,18 +170,44 @@ pub fn best_move_search_helper(game: Game, depth: u8, eval_func: fn(&Game) -> i1
                     Some(&0)
                 }
             };
-            match bestEval {
+            evals2.push(match bestEval {
                 Some(bestEval) => bestEval,
                 _ => &d
-            }.clone()
-        }).collect();
-        (moves, evals)
+            }.clone());
+
+        }
+        // let evals: Vec<i16> = moves.iter().map(|m| {
+        //     let d = eval_func(m);
+        //     let o = best_move_search_helper(m.clone(), depth - 1, eval_func).1; //TODO:: figure out alpha and beta
+        //     let bestEval: Option<&i16> = match m.get_state() {
+        //         State::LeftToMove => {
+        //             o.iter().max()
+        //         }
+        //         State::RightToMove => {
+        //             o.iter().min()
+        //         }
+        //         State::LeftWins => {
+        //             Some(&100)
+        //         }
+        //         State::RightWins => {
+        //             Some(&-100)
+        //         }
+        //         State::Draw => {
+        //             Some(&0)
+        //         }
+        //     };
+        //     match bestEval {
+        //         Some(bestEval) => bestEval,
+        //         _ => &d
+        //     }.clone()
+        // }).collect();
+        (moves, evals2)
     }
 
 }
 
-pub fn best_move(game: Game) -> (u8, i16) {
-    let (games, evals) = best_move_search(game.clone(), AI_DEPTH);
+pub fn best_move(game: Game, eval_func : fn(&Game) -> i16 ) -> (u8, i16) {
+    let (games, evals) = best_move_search(game.clone(), AI_DEPTH, eval_func);
     let mut moves= match game.get_state() {
         State::LeftToMove => {
             [-999; 6]
@@ -226,6 +285,6 @@ pub fn best_move(game: Game) -> (u8, i16) {
 }
 
 pub fn display_moves(game: Game) {
-    let o = best_move(game);
+    let o = best_move(game, eval_2);
     println!("Best move: {}, Evaluation: {}", o.0, o.1)
 }

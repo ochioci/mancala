@@ -77,7 +77,7 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
         println!("Thread Created");
         let d = depth.clone();
         threads.push(thread::spawn(move || {
-           best_move_search_helper(n, d)
+           best_move_search_helper(n, d, eval)
         }));
     }
 
@@ -96,7 +96,7 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
     let mut result_games = vec![];
     let mut result_evals = vec![];
     for (games, evals) in out {
-        let local_best = best_index(evals.clone(), games[0].get_state());
+        let local_best = best_index(evals.clone(), games[0].get_state()); //crash here
         result_games.push(games[local_best].clone());
         result_evals.push(evals[local_best].clone());
     }
@@ -107,17 +107,19 @@ pub fn best_move_search(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
 
     (result_games, result_evals)
 }
-
-pub fn best_move_search_helper(game: Game, depth: u8) -> (Vec<Game>, Vec<i16>) {
+pub fn eval(game : &Game) -> i16 {
+    (game.board[6] as i16) - ( game.board[13] as i16)
+}
+pub fn best_move_search_helper(game: Game, depth: u8, eval_func: fn(&Game) -> i16) -> (Vec<Game>, Vec<i16>) {
     if (depth < 1) {
         let mut moves = next_positions(game);
-        let evals: Vec<i16> = moves.iter().map(|m| m.eval()).collect();
+        let evals: Vec<i16> = moves.iter().map(|m| eval_func(m)).collect();
         (moves, evals)
     } else {
         let mut moves = next_positions(game);
         let evals: Vec<i16> = moves.iter().map(|m| {
-            let d = m.eval();
-            let o = best_move_search_helper(m.clone(), depth - 1).1;
+            let d = eval_func(m);
+            let o = best_move_search_helper(m.clone(), depth - 1, eval_func).1;
             let bestEval: Option<&i16> = match m.get_state() {
                 State::LeftToMove => {
                     o.iter().max()

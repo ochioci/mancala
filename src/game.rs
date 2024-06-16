@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Clone, Debug)]
 pub(crate) struct Game {
     game_state: State,
-    board: [u8; 14],
+    pub(crate) board: [u8; 14],
     pub(crate) move_index: usize
 }
 #[derive(Default, Debug, Clone)]

@@ -36,7 +36,7 @@ pub fn next_positions(game: Game) -> Vec<Game> {
     //accounts for extra turns
     let mut moves: Vec<usize> = game.get_moves();
     let mut options: Vec<Game> = vec![];
-    let to_move: State = game.get_state().clone();
+    let to_move: &State = game.get_state();
     for m in moves {
         let mut b: Game = game.clone();
         b.make_move(m as u8);
@@ -44,9 +44,9 @@ pub fn next_positions(game: Game) -> Vec<Game> {
             b.move_index = m;
         }
         // println!("{}", m);
-        if (b.get_state() == to_move) {
+        if (b.get_state() == *to_move) {
             // println!("turn didn't change!");
-            options.append(&mut next_positions(b.clone()))
+            options.append(&mut next_positions(b))
         } else {
             options.push(b);
         }
@@ -54,7 +54,7 @@ pub fn next_positions(game: Game) -> Vec<Game> {
     options
 }
 
-fn best_index(evals: Vec<i16>, state: &State) -> usize {
+fn best_index(evals: &Vec<i16>, state: &State) -> usize {
     let mut best = 0;
     for i in 0..evals.len() {
         if (match state {
@@ -104,7 +104,7 @@ pub fn best_move_search(
         let t = games.get(0);
         match t {
             Some(t) => {
-                let local_best = best_index(evals.clone(), games[0].get_state()); //crash here
+                let local_best = best_index(&evals, games[0].get_state()); //crash here
                 result_games.push(games[local_best].clone());
                 result_evals.push(evals[local_best].clone());
             }
@@ -169,8 +169,9 @@ pub fn best_move_search_helper(
         let mut evals2: Vec<i16> = vec![];
         for m in moves.clone() {
             let d = eval_func(&m);
-            let o = best_move_search_helper(m.clone(), depth - 1, eval_func, alpha, beta).1;
-            let bestEvalOption: Option<&i16> = match m.get_state() {
+            let mState = m.get_state().clone();
+            let o = best_move_search_helper(m, depth - 1, eval_func, alpha, beta).1;
+            let bestEvalOption: Option<&i16> = match mState {
                 State::LeftToMove => o.iter().max(),
                 State::RightToMove => o.iter().min(),
                 State::LeftWins => Some(&100),
@@ -201,14 +202,15 @@ pub fn best_move_search_helper(
 }
 
 pub fn best_move(game: Game, eval_func: fn(&Game) -> i16) -> (u8, i16) {
-    let (games, evals) = best_move_search(game.clone(), AI_DEPTH, eval_func);
-    let mut moves = match game.get_state() {
+    let gState = game.get_state().clone();
+    let (games, evals) = best_move_search(game, AI_DEPTH, eval_func);
+    let mut moves = match gState {
         State::LeftToMove => [-999; 6],
         _ => [999; 6],
     };
 
     for g in 0..games.len() {
-        let index = match game.get_state() {
+        let index = match gState {
             State::LeftToMove => {
                 // moves = [-999; 6];
                 games[g].move_index
@@ -221,7 +223,7 @@ pub fn best_move(game: Game, eval_func: fn(&Game) -> i16) -> (u8, i16) {
                 return (100, 999);
             }
         };
-        match game.get_state() {
+        match gState {
             State::LeftToMove => {
                 if evals[g] > moves[index] {
                     moves[index] = evals[g];
@@ -238,7 +240,7 @@ pub fn best_move(game: Game, eval_func: fn(&Game) -> i16) -> (u8, i16) {
 
     let mut max = 0;
     for i in 1..moves.len() {
-        match game.get_state() {
+        match gState {
             State::LeftToMove => {
                 if moves[i] > moves[max] {
                     max = i

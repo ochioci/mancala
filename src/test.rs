@@ -8,6 +8,7 @@ pub(crate) fn test_ai(left_eval: fn(&Game) -> i16, right_eval: fn(&Game) -> i16)
     loop {
         my_game.display();
         let t = SystemTime::now();
+        my_game.game_over_check();
         match my_game.get_state() {
             State::LeftToMove => {
                 let my_move = best_move(my_game.clone(), left_eval);

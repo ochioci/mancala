@@ -55,7 +55,7 @@ impl Game {
         })
     }
 
-    fn game_over_check (&mut self) {
+    pub(crate) fn game_over_check (&mut self) {
         if self.board[0..6].into_iter().sum::<u8>() == 0 || self.board[7..13].into_iter().sum::<u8>() == 0 {
             self.board[6] += self.board[0..6].into_iter().sum::<u8>();
             self.board[13] += self.board[7..13].into_iter().sum::<u8>();

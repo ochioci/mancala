@@ -165,12 +165,7 @@ pub fn best_move_search_helper(
 
         let mut moves = next_positions(game);
         let mut newMoves = vec![];
-        //TODO::
-        //alpha beta pruning
-        //left to move: we maximize
-        //right to move: we minimize
-
-        let ct = 0;
+        let mut ct = 0;
         let mut evals2: Vec<i16> = vec![];
         for m in moves.clone() {
             let d = eval_func(&m);
@@ -199,10 +194,7 @@ pub fn best_move_search_helper(
                     beta = i16::min(*bestEval, beta)
                 }
             };
-            // evals2.push(match bestEval {
-            //     Some(bestEval) => bestEval,
-            //     _ => &d
-            // }.clone());
+            ct+=1;
         }
         (newMoves, evals2)
     }

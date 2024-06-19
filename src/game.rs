@@ -1,7 +1,14 @@
+use std::cmp::min;
 use std::num::ParseIntError;
 use crate::ai::{display_moves, predict_complexity};
 use crate::{AI_DEPTH, CLEAR, LEFT_AI, RIGHT_AI};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+static CHAR_TABLE: [char; 49] = [
+    '0','1','2','3','4','5','6','7','8','9',
+    'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x',
+    'y','z','~','!','@','#','$','%','^','&','*','(',')','-','='
+];
 #[derive(Clone, Debug)]
 pub(crate) struct Game {
     game_state: State,
@@ -17,6 +24,56 @@ pub(crate) enum State {
     RightWins,
     Draw
 }
+
+impl From<&Game> for String {
+    fn from(value: &Game) -> Self {
+        let mut out = String::from("");
+        match value.get_state() {
+            State::LeftToMove => {
+                out += "+";
+            },
+            State::RightToMove => {
+                out += "_"
+            },
+            _ => {
+                out += "?"
+            }
+        }
+        for g in value.board {
+            out += &CHAR_TABLE[g as usize].to_string();
+        }
+        out
+    }
+}
+
+
+impl From<&String> for Game {
+    fn from(value: &String) -> Self {
+        let v = value.chars();
+        let mut g = Game::default();
+        match v.clone().nth(0){
+            Some('+') => {
+                g.game_state = State::LeftToMove;
+            },
+            Some('_') => {
+                g.game_state = State::RightToMove;
+            }
+            _ => {
+                g.game_state = State::Draw;
+            }
+        }
+        for i in 1..min(value.len(), 15) {
+            let value = CHAR_TABLE.iter().position(|&r| r==v.clone().nth(i).unwrap());
+            match value {
+                Some(value) => {g.board[i-1] = value as u8 },
+                _ => {}
+            }
+        }
+        g
+    }
+}
+
+
 impl Game {
 
     pub fn get_state(&self) -> &State {

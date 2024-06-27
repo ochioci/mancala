@@ -201,9 +201,9 @@ pub fn best_move_search_helper(
     }
 }
 
-pub fn best_move(game: Game, eval_func: fn(&Game) -> i16) -> (u8, i16) {
+pub fn best_move(game: Game, eval_func: fn(&Game) -> i16, depth: u8) -> (u8, i16) {
     let gState = game.get_state().clone();
-    let (games, evals) = best_move_search(game, AI_DEPTH, eval_func);
+    let (games, evals) = best_move_search(game, depth, eval_func);
     let mut moves = match gState {
         State::LeftToMove => [-999; 6],
         _ => [999; 6],
@@ -258,6 +258,6 @@ pub fn best_move(game: Game, eval_func: fn(&Game) -> i16) -> (u8, i16) {
 }
 
 pub fn display_moves(game: Game) {
-    let o = best_move(game, eval);
+    let o = best_move(game, eval, AI_DEPTH);
     println!("Best move: {}, Evaluation: {}", o.0, o.1)
 }
